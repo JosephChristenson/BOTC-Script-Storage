@@ -41,6 +41,15 @@
             margin-bottom: 10px;
         }
 
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
         .github-config {
             display: flex;
             gap: 15px;
@@ -304,7 +313,14 @@
     <div class="container">
         <div class="header">
             <h1>JSON Navigator</h1>
-            <p>Search and navigate through your JSON files with ease</p>
+            <p>Store, search, and navigate through your JSON files with ease</p>
+        </div>
+
+        <div class="upload-section">
+            <h2>JSON Scripts Collection</h2>
+            <button id="loadBtn" class="search-btn">Load JSON Files</button>
+            <p>Loading JSON files from the Scripts folder...</p>
+            <div id="loadingStatus" class="loading-status"></div>
         </div>
 
         <div class="search-section">
