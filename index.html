@@ -41,41 +41,39 @@
             margin-bottom: 10px;
         }
 
-        .upload-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border-radius: 10px;
-            padding: 15px 30px;
-            color: white;
-            font-weight: 600;
-            transition: all 0.3s ease;
+        .github-config {
+            display: flex;
+            gap: 15px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        .file-input-wrapper:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        .github-config input {
+            flex: 1;
+            min-width: 200px;
         }
 
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
+        .loading-status {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .loading-status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .loading-status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .loading-status.error {
+            background: #ffebee;
+            color: #c62828;
         }
 
         .search-section {
@@ -306,16 +304,7 @@
     <div class="container">
         <div class="header">
             <h1>JSON Navigator</h1>
-            <p>Store, search, and navigate through your JSON files with ease</p>
-        </div>
-
-        <div class="upload-section">
-            <h2>Upload JSON Files</h2>
-            <div class="file-input-wrapper">
-                <input type="file" id="fileInput" accept=".json" multiple>
-                Upload JSON Files
-            </div>
-            <p>Select multiple JSON files to add to your collection</p>
+            <p>Search and navigate through your JSON files with ease</p>
         </div>
 
         <div class="search-section">
@@ -368,12 +357,15 @@
                 this.jsonFiles = [];
                 this.filteredFiles = [];
                 this.allKeys = new Set();
+                this.GITHUB_REPO = 'JosephChristenson/BOTC-Script-Storage.Github.io';
+                this.SCRIPTS_FOLDER = 'Scripts';
                 this.initializeEventListeners();
                 this.updateStats();
+                this.loadFromGitHub();
             }
 
             initializeEventListeners() {
-                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileUpload(e));
+                document.getElementById('loadBtn').addEventListener('click', () => this.loadFromGitHub());
                 document.getElementById('searchBtn').addEventListener('click', () => this.performSearch());
                 document.getElementById('clearBtn').addEventListener('click', () => this.clearSearch());
                 document.getElementById('searchInput').addEventListener('keypress', (e) => {
@@ -389,38 +381,92 @@
                 });
             }
 
-            async handleFileUpload(event) {
-                const files = Array.from(event.target.files);
-                
-                for (const file of files) {
-                    if (file.type === 'application/json' || file.name.endsWith('.json')) {
-                        try {
-                            const text = await file.text();
-                            const jsonData = JSON.parse(text);
-                            
-                            const fileObj = {
-                                id: Date.now() + Math.random(),
-                                name: file.name,
-                                data: jsonData,
-                                size: file.size,
-                                uploadDate: new Date().toISOString(),
-                                keys: this.extractKeys(jsonData)
-                            };
-
-                            this.jsonFiles.push(fileObj);
-                            this.extractAllKeys(jsonData);
-                        } catch (error) {
-                            alert(`Error parsing ${file.name}: ${error.message}`);
-                        }
-                    }
+            async loadFromGitHub() {
+                if (!this.GITHUB_REPO || this.GITHUB_REPO === 'YOUR_USERNAME/YOUR_REPOSITORY') {
+                    this.showStatus('Please configure your GitHub repository in the code', 'error');
+                    return;
                 }
 
-                this.filteredFiles = [...this.jsonFiles];
-                this.updateDisplay();
-                this.updateStats();
+                this.showStatus('Loading JSON files from Scripts folder...', 'loading');
                 
-                // Clear file input
-                event.target.value = '';
+                try {
+                    // Clear existing files
+                    this.jsonFiles = [];
+                    this.filteredFiles = [];
+                    this.allKeys.clear();
+                    
+                    // Get repository contents from Scripts folder
+                    const response = await fetch(`https://api.github.com/repos/${this.GITHUB_REPO}/contents/${this.SCRIPTS_FOLDER}`);
+                    
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error(`Scripts folder not found. Please create a "${this.SCRIPTS_FOLDER}" folder in your repository.`);
+                        }
+                        throw new Error(`Failed to access repository: ${response.status}`);
+                    }
+                    
+                    const contents = await response.json();
+                    
+                    // Filter JSON files
+                    const jsonFiles = contents.filter(file => 
+                        file.type === 'file' && file.name.endsWith('.json')
+                    );
+                    
+                    if (jsonFiles.length === 0) {
+                        this.showStatus('No JSON files found in the Scripts folder', 'error');
+                        return;
+                    }
+                    
+                    // Load each JSON file
+                    let loadedCount = 0;
+                    for (const file of jsonFiles) {
+                        try {
+                            const fileResponse = await fetch(file.download_url);
+                            if (fileResponse.ok) {
+                                const text = await fileResponse.text();
+                                const jsonData = JSON.parse(text);
+                                
+                                const fileObj = {
+                                    id: Date.now() + Math.random(),
+                                    name: file.name,
+                                    data: jsonData,
+                                    size: file.size,
+                                    uploadDate: new Date().toISOString(),
+                                    keys: this.extractKeys(jsonData),
+                                    githubUrl: file.html_url
+                                };
+
+                                this.jsonFiles.push(fileObj);
+                                this.extractAllKeys(jsonData);
+                                loadedCount++;
+                            }
+                        } catch (error) {
+                            console.warn(`Error loading ${file.name}:`, error);
+                        }
+                    }
+                    
+                    this.filteredFiles = [...this.jsonFiles];
+                    this.updateDisplay();
+                    this.updateStats();
+                    
+                    this.showStatus(`Successfully loaded ${loadedCount} JSON files from Scripts folder`, 'success');
+                    
+                } catch (error) {
+                    this.showStatus(`Error: ${error.message}`, 'error');
+                }
+            }
+
+            showStatus(message, type) {
+                const statusEl = document.getElementById('loadingStatus');
+                statusEl.textContent = message;
+                statusEl.className = `loading-status ${type}`;
+                
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                        statusEl.className = 'loading-status';
+                    }, 3000);
+                }
             }
 
             extractKeys(obj, prefix = '') {
@@ -522,15 +568,13 @@
                             <div class="json-name">${file.name}</div>
                             <div class="json-meta">
                                 ${this.formatFileSize(file.size)} • ${new Date(file.uploadDate).toLocaleDateString()}
+                                ${file.githubUrl ? `• <a href="${file.githubUrl}" target="_blank">View on GitHub</a>` : ''}
                             </div>
                         </div>
                         <div class="json-preview">${this.getPreview(file.data)}</div>
                         <div class="json-actions">
                             <button class="btn btn-primary" onclick="jsonNavigator.viewFull('${file.id}')">
                                 View Full JSON
-                            </button>
-                            <button class="btn btn-danger" onclick="jsonNavigator.deleteFile('${file.id}')">
-                                Delete
                             </button>
                         </div>
                     </div>
