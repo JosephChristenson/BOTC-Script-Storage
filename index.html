@@ -357,7 +357,7 @@
                 this.jsonFiles = [];
                 this.filteredFiles = [];
                 this.allKeys = new Set();
-                this.GITHUB_REPO = 'JosephChristenson/BOTC-Script-Storage.Github.io';
+                this.GITHUB_REPO = 'JosephChristenson/BOTC-Script-Storage';
                 this.SCRIPTS_FOLDER = 'Scripts';
                 this.initializeEventListeners();
                 this.updateStats();
@@ -382,7 +382,7 @@
             }
 
             async loadFromGitHub() {
-                if (!this.GITHUB_REPO || this.GITHUB_REPO === 'JosephChristenson/BOTC-Script-Storage.Github.io') {
+                if (!this.GITHUB_REPO || this.GITHUB_REPO === 'JosephChristenson/BOTC-Script-Storage') {
                     this.showStatus('Please configure your GitHub repository in the code', 'error');
                     return;
                 }
