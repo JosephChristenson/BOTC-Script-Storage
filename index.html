@@ -200,7 +200,7 @@
         }
 
         .json-meta {
-            color: #666;
+            color: #1245;
             font-size: 0.9rem;
         }
 
@@ -248,7 +248,7 @@
         .no-results {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: #1245;
             font-size: 1.1rem;
         }
 
@@ -373,7 +373,7 @@
                 this.jsonFiles = [];
                 this.filteredFiles = [];
                 this.allKeys = new Set();
-                this.GITHUB_REPO = 'JosephChristenson/BOTC-Script-Storage';
+                this.GITHUB_REPO = 'josephchristenson.github.io/BOTC-Script-Storage';
                 this.SCRIPTS_FOLDER = 'Scripts';
                 this.initializeEventListeners();
                 this.updateStats();
@@ -398,7 +398,7 @@
             }
 
             async loadFromGitHub() {
-                if (!this.GITHUB_REPO || this.GITHUB_REPO === 'JosephChristenson/BOTC-Script-Storage') {
+                if (!this.GITHUB_REPO || this.GITHUB_REPO === 'josephchristenson.github.io/BOTC-Script-Storage') {
                     this.showStatus('Please configure your GitHub repository in the code', 'error');
                     return;
                 }
